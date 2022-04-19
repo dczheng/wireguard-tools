@@ -72,6 +72,11 @@ wg: wincompat/libc.o wincompat/init.o wincompat/loader.o wincompat/resources.o
 wincompat/resources.o: wincompat/resources.rc wincompat/manifest.xml
 	$(WINDRES) -DVERSION_STR=$(VERSION) -O coff -c 65001 -i $< -o $@
 endif
+ifeq ($(PLATFORM),dragonfly)
+ifneq ($(shell which bash),)
+WITH_WGQUICK := yes
+endif
+endif
 
 ifneq ($(V),1)
 BUILT_IN_LINK.o := $(LINK.o)

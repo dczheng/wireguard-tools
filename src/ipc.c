@@ -49,6 +49,8 @@ static int string_list_add(struct string_list *list, const char *str)
 #include "ipc-freebsd.h"
 #elif defined(_WIN32)
 #include "ipc-windows.h"
+#elif defined(__DragonFly__)
+#include "ipc-dragonfly.h"
 #endif
 
 /* first\0second\0third\0forth\0last\0\0 */
