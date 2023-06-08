@@ -19,6 +19,14 @@
 
 #define IPC_SUPPORTS_KERNEL_INTERFACE
 
+//#define DEBUG
+
+#ifdef DEBUG
+#define DEBUG_BIT_IS_SET(v, k)  printf("%s %s: %d\n", #v, #k, (v & k) != 0)
+#else
+#define DEBUG_BIT_IS_SET(v, k) // nothing
+#endif
+
 static int get_dgram_socket(void)
 {
 	static int sock = -1;
@@ -215,10 +223,22 @@ static int kernel_set_device(struct wgdevice *dev)
 
 	peer_count = 0;
 	peer_io = &iface_io->i_peers[0];
+
+    DEBUG_BIT_IS_SET(iface_io->i_flags, WG_IO_INTERFACE_PUBLIC);
+    DEBUG_BIT_IS_SET(iface_io->i_flags, WG_IO_INTERFACE_PRIVATE);
+    DEBUG_BIT_IS_SET(iface_io->i_flags, WG_IO_INTERFACE_PORT);
+    DEBUG_BIT_IS_SET(iface_io->i_flags, WG_IO_INTERFACE_COOKIE);
+    DEBUG_BIT_IS_SET(iface_io->i_flags, WG_IO_INTERFACE_REPLACE_PEERS);
+
 	for_each_wgpeer(dev, peer) {
 		peer_io->p_flags = WG_IO_PEER_PUBLIC;
-		memcpy(&peer_io->p_endpoint, &peer->endpoint, sizeof(peer->endpoint));
 		memcpy(peer_io->p_public, peer->public_key, sizeof(peer_io->p_public));
+
+        if ((peer->endpoint.addr.sa_family == AF_INET || peer->endpoint.addr.sa_family == AF_INET6) &&
+            peer->endpoint.addr.sa_len <= sizeof(peer_io->p_endpoint)) {
+		    memcpy(&peer_io->p_endpoint, &peer->endpoint, sizeof(peer->endpoint));
+		    peer_io->p_flags |= WG_IO_PEER_ENDPOINT;
+        }
 
 		if (peer->flags & WGPEER_HAS_PRESHARED_KEY) {
 			memcpy(peer_io->p_psk, peer->preshared_key, sizeof(peer_io->p_psk));
@@ -252,6 +272,11 @@ static int kernel_set_device(struct wgdevice *dev)
 		}
 		peer_io->p_aips_count = aip_count;
 		++peer_count;
+        DEBUG_BIT_IS_SET(peer_io->p_flags, WG_IO_PEER_ENDPOINT);
+        DEBUG_BIT_IS_SET(peer_io->p_flags, WG_IO_PEER_PUBLIC);
+        DEBUG_BIT_IS_SET(peer_io->p_flags, WG_IO_PEER_PSK);
+        DEBUG_BIT_IS_SET(peer_io->p_flags, WG_IO_PEER_REPLACE_AIPS);
+        DEBUG_BIT_IS_SET(peer_io->p_flags, WG_IO_PEER_REMOVE);
 		peer_io = (struct wg_peer_io *)aip_io;
 	}
 	iface_io->i_peers_count = peer_count;
